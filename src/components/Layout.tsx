@@ -1,6 +1,7 @@
 import { PropsWithChildren } from 'react';
 import Header from './header/Header';
 import { Button } from './ui/button';
+import { VITE_OPEN_WEATHER_API_URL } from '@/constants/env';
 
 const Layout = ({ children }: PropsWithChildren) => {
   return (
@@ -15,7 +16,7 @@ const Layout = ({ children }: PropsWithChildren) => {
             variant='link'
             className='pl-0 text-muted-foreground font-light'
           >
-            <a href='https://openweathermap.org/api' target='_blank'>
+            <a href={VITE_OPEN_WEATHER_API_URL} target='_blank'>
               OpenWeather API
             </a>
           </Button>

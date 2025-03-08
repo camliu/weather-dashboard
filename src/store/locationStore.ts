@@ -1,9 +1,9 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import type { Coordinates, GeolocationData } from '@/api/types';
-import { createSelectors } from './createSelectors';
-import { geolocationApi } from '@/api/geolocationApi';
-import { getCurrentCoordinates } from '@/utils/getGeolocation';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import type { Coordinates, GeolocationData } from "@/api/types";
+import { createSelectors } from "./createSelectors";
+import { geolocationApi } from "@/api/geolocationApi";
+import { getCurrentCoordinates } from "@/utils/getGeolocation";
 
 interface LocationStore {
   coordinates: Coordinates | null;
@@ -16,12 +16,15 @@ interface LocationStore {
   setLocation: (coordinates: Coordinates) => void;
 }
 
-export const createLocationStore = (
-  fetchLocationByCoord: (
-    coord: Coordinates
-  ) => Promise<GeolocationData[]> = geolocationApi.fetchLocationByCoord,
-  getCurrentCoordinates: () => Promise<Coordinates>
-) => {
+interface createLocationStoreParams {
+  fetchLocationByCoordFn: (coord: Coordinates) => Promise<GeolocationData[]>;
+  getCurrentCoordinatesFn: () => Promise<Coordinates>;
+}
+
+export const createLocationStore = ({
+  fetchLocationByCoordFn,
+  getCurrentCoordinatesFn,
+}: createLocationStoreParams) => {
   return create(
     persist<LocationStore>(
       (set) => ({
@@ -35,8 +38,8 @@ export const createLocationStore = (
         setCurrentLocation: async () => {
           set({ geolocationError: null, isGeolocationLoading: true });
           try {
-            const coordinates = await getCurrentCoordinates();
-            const locationData = await fetchLocationByCoord(coordinates);
+            const coordinates = await getCurrentCoordinatesFn();
+            const locationData = await fetchLocationByCoordFn(coordinates);
 
             const [currentLocationData] = locationData;
             set({
@@ -53,7 +56,7 @@ export const createLocationStore = (
               geolocationError:
                 error instanceof Error
                   ? error.message
-                  : 'An unknown error occurred',
+                  : "An unknown error occurred",
               isGeolocationLoading: false,
             });
           }
@@ -61,7 +64,7 @@ export const createLocationStore = (
 
         setLocation: async (coordinates) => {
           try {
-            const locationData = await fetchLocationByCoord(coordinates);
+            const locationData = await fetchLocationByCoordFn(coordinates);
             const [targetLocationData] = locationData;
 
             set({
@@ -73,13 +76,13 @@ export const createLocationStore = (
               geolocationError:
                 error instanceof Error
                   ? error.message
-                  : 'An unknown error occurred',
+                  : "An unknown error occurred",
             });
           }
         },
       }),
       {
-        name: 'location-storage',
+        name: "session-storage",
         storage: createJSONStorage(() => sessionStorage),
       }
     )
@@ -87,8 +90,8 @@ export const createLocationStore = (
 };
 
 export const useLocationStore = createSelectors(
-  createLocationStore(
-    geolocationApi.fetchLocationByCoord,
-    getCurrentCoordinates
-  )
+  createLocationStore({
+    fetchLocationByCoordFn: geolocationApi.fetchLocationByCoord,
+    getCurrentCoordinatesFn: getCurrentCoordinates,
+  })
 );
